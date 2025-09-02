@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企微群创建工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .template-selector {
+            position: relative;
+        }
+        
+        .template-header {
+            display: flex;
+            padding: 12px 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .template-header:hover {
+            background-color: #e8e8e8;
+        }
+        
+        .template-header::after {
+            content: '▼';
+            font-size: 12px;
+        }
+        
+        .template-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        
+        .template-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .template-table th {
+            background-color: #f5f5f5;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .template-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .template-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .template-table tr.selected {
+            background-color: #e6f7ff;
+        }
+        
+        .template-checkbox {
+            margin-right: 10px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        
+        .user-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+        
+        .user-suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .user-suggestion-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .selected-users {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            gap: 8px;
+        }
+        
+        .selected-user-tag {
+            background-color: #e6f7ff;
+            border: 1px solid #91d5ff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .remove-user {
+            margin-left: 6px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .remove-user:hover {
+            color: #f5222d;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            background-color: #1890ff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #40a9ff;
+        }
+        
+        .btn:active {
+            background-color: #096dd9;
+        }
+        
+        .char-count {
+            margin-top: 5px;
+            text-align: right;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .char-count.warning {
+            color: #faad14;
+        }
+        
+        .char-count.error {
+            color: #f5222d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>企微群创建工具</h1>
+        
+        <div class="form-group">
+            <label for="template-selector">对应模板</label>
+            <div class="template-selector" id="template-selector">
+                <div class="template-header" id="template-header">请选择模板</div>
+                <div class="template-dropdown" id="template-dropdown">
+                    <table class="template-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>模板ID</th>
+                                <th>模板名称</th>
+                                <th>同步线上时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="template-list">
+                            <!-- 模板列表将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="selected-templates" class="selected-templates"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notify-users">通知人</label>
+            <div style="position: relative;">
+                <input type="text" id="notify-users" placeholder="输入ID或中文名字进行模糊匹配">
+                <div class="user-suggestions" id="user-suggestions"></div>
+            </div>
+            <div class="selected-users" id="selected-users"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="group-name">群名</label>
+            <input type="text" id="group-name" placeholder="群名将根据选择的模板自动生成">
+            <div class="char-count" id="char-count">0/50</div>
+        </div>
+        
+        <button class="btn" id="create-group-btn">生成企微群</button>
+    </div>
+
+    <script>
+        // 模拟模板数据
+        const templateData = [
+            { id: '1002784', name: '横竖屏_竖素材_二合一topcard_高版本支持', syncTime: '2023-12-15 14:30:25' },
+            { id: '1002356', name: '横屏_横素材_单图文_低版本兼容', syncTime: '2023-12-10 09:15:32' },
+            { id: '1003421', name: '竖屏_竖素材_多图文_高版本支持', syncTime: '2023-12-05 16:45:18' },
+            { id: '1001987', name: '横屏_横素材_视频_全版本兼容', syncTime: '2023-11-28 11:20:45' },
+            { id: '1003789', name: '竖屏_竖素材_轮播图_高版本支持', syncTime: '2023-11-20 13:55:10' },
+            { id: '1002145', name: '横屏_横素材_互动组件_中版本兼容', syncTime: '2023-11-15 10:05:38' },
+            { id: '1003654', name: '竖屏_竖素材_倒计时_高版本支持', syncTime: '2023-11-08 15:40:22' },
+            { id: '1001876', name: '横屏_横素材_抽奖组件_全版本兼容', syncTime: '2023-11-01 08:25:17' },
+            { id: '1003912', name: '竖屏_竖素材_浮层_高版本支持', syncTime: '2023-10-25 17:10:05' },
+            { id: '1002567', name: '横屏_横素材_卡片流_中版本兼容', syncTime: '2023-10-18 12:35:50' }
+        ];
+
+        // 按照同步线上时间排序（由新至旧）
+        templateData.sort((a, b) => new Date(b.syncTime) - new Date(a.syncTime));
+
+        // 模拟企微用户数据
+        const wxUsers = [
+            { id: 'user001', name: '张三' },
+            { id: 'user002', name: '李四' },
+            { id: 'user003', name: '王五' },
+            { id: 'user004', name: '赵六' },
+            { id: 'user005', name: '钱七' },
+            { id: 'user006', name: '孙八' },
+            { id: 'user007', name: '周九' },
+            { id: 'user008', name: '吴十' },
+            { id: 'user009', name: '郑十一' },
+            { id: 'user010', name: '王十二' }
+        ];
+
+        // 选中的模板
+        let selectedTemplates = [];
+        // 选中的用户
+        let selectedUsers = [];
+
+        // DOM元素
+        const templateHeader = document.getElementById('template-header');
+        const templateDropdown = document.getElementById('template-dropdown');
+        const templateList = document.getElementById('template-list');
+        const selectedTemplatesContainer = document.getElementById('selected-templates');
+        const notifyUsersInput = document.getElementById('notify-users');
+        const userSuggestions = document.getElementById('user-suggestions');
+        const selectedUsersContainer = document.getElementById('selected-users');
+        const groupNameInput = document.getElementById('group-name');
+        const charCount = document.getElementById('char-count');
+        const createGroupBtn = document.getElementById('create-group-btn');
+
+        // 初始化模板列表
+        function initTemplateList() {
+            templateList.innerHTML = '';
+            templateData.forEach(template => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="template-checkbox" data-id="${template.id}"></td>
+                    <td>${template.id}</td>
+                    <td>${template.name}</td>
+                    <td>${template.syncTime}</td>
+                `;
+                templateList.appendChild(row);
+
+                // 添加点击事件
+                const checkbox = row.querySelector('.template-checkbox');
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        row.classList.add('selected');
+                        selectedTemplates.push(template);
+                    } else {
+                        row.classList.remove('selected');
+                        selectedTemplates = selectedTemplates.filter(t => t.id !== template.id);
+                    }
+                    updateSelectedTemplates();
+                    updateGroupName();
+                });
+            });
+        }
+
+        // 更新已选模板显示
+        function updateSelectedTemplates() {
+            if (selectedTemplates.length > 0) {
+                templateHeader.textContent = `已选择 ${selectedTemplates.length} 个模板`;
+            } else {
+                templateHeader.textContent = '请选择模板';
+            }
+        }
+
+        // 更新群名
+        function updateGroupName() {
+            if (selectedTemplates.length > 0) {
+                // 使用第一个选中的模板生成默认群名
+                const firstTemplate = selectedTemplates[0];
+                const defaultGroupName = `${firstTemplate.id}+${firstTemplate.name}+正式上线群`;
+                groupNameInput.value = defaultGroupName;
+                updateCharCount();
+            } else {
+                groupNameInput.value = '';
+                updateCharCount();
+            }
+        }
+
+        // 更新字符计数
+        function updateCharCount() {
+            const count = groupNameInput.value.length;
+            charCount.textContent = `${count}/50`;
+            
+            if (count > 40 && count <= 50) {
+                charCount.className = 'char-count warning';
+            } else if (count > 50) {
+                charCount.className = 'char-count error';
+            } else {
+                charCount.className = 'char-count';
+            }
+        }
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 模板选择器点击事件
+            templateHeader.addEventListener('click', function() {
+                templateDropdown.style.display = templateDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+
+            // 点击外部关闭下拉框
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('#template-selector')) {
+                    templateDropdown.style.display = 'none';
+                }
+                if (!event.target.closest('#notify-users') && !event.target.closest('#user-suggestions')) {
+                    userSuggestions.style.display = 'none';
+                }
+            });
+
+            // 通知人输入框事件
+            notifyUsersInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                if (query) {
+                    // 过滤匹配的用户
+                    const matchedUsers = wxUsers.filter(user => 
+                        user.id.toLowerCase().includes(query) || 
+                        user.name.toLowerCase().includes(query)
+                    );
+                    
+                    // 显示匹配结果
+                    if (matchedUsers.length > 0) {
+                        userSuggestions.innerHTML = '';
+                        matchedUsers.forEach(user => {
+                            const item = document.createElement('div');
+                            item.className = 'user-suggestion-item';
+                            item.textContent = `${user.name} (${user.id})`;
+                            item.addEventListener('click', function() {
+                                addSelectedUser(user);
+                                notifyUsersInput.value = '';
+                                userSuggestions.style.display = 'none';
+                            });
+                            userSuggestions.appendChild(item);
+                        });
+                        userSuggestions.style.display = 'block';
+                    } else {
+                        userSuggestions.style.display = 'none';
+                    }
+                } else {
+                    userSuggestions.style.display = 'none';
+                }
+            });
+
+            // 通知人输入框获取焦点事件
+            notifyUsersInput.addEventListener('focus', function() {
+                if (this.value.trim()) {
+                    userSuggestions.style.display = 'block';
+                }
+            });
+
+            // 群名输入框事件
+            groupNameInput.addEventListener('input', updateCharCount);
+
+            // 创建群按钮点击事件
+            createGroupBtn.addEventListener('click', function() {
+                if (validateForm()) {
+                    createGroup();
+                }
+            });
+        }
+
+        // 添加选中的用户
+        function addSelectedUser(user) {
+            // 检查用户是否已经被选中
+            if (!selectedUsers.some(u => u.id === user.id)) {
+                selectedUsers.push(user);
+                
+                // 创建用户标签
+                const userTag = document.createElement('div');
+                userTag.className = 'selected-user-tag';
+                userTag.innerHTML = `
+                    <span>${user.name}</span>
+                    <span class="remove-user" data-id="${user.id}">×</span>
+                `;
+                selectedUsersContainer.appendChild(userTag);
+                
+                // 添加删除事件
+                const removeBtn = userTag.querySelector('.remove-user');
+                removeBtn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    selectedUsers = selectedUsers.filter(u => u.id !== userId);
+                    userTag.remove();
+                });
+            }
+        }
+
+        // 表单验证
+        function validateForm() {
+            if (selectedTemplates.length === 0) {
+                alert('请至少选择一个模板');
+                return false;
+            }
+            
+            if (selectedUsers.length === 0) {
+                alert('请至少选择一个通知人');
+                return false;
+            }
+            
+            if (!groupNameInput.value.trim()) {
+                alert('请输入群名');
+                return false;
+            }
+            
+            if (groupNameInput.value.length > 50) {
+                alert('群名不能超过50个字符');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 创建企微群
+        function createGroup() {
+            // 这里是模拟创建企微群的逻辑
+            // 实际应用中，这里应该调用相应的API
+            
+            const groupInfo = {
+                name: groupNameInput.value,
+                templates: selectedTemplates,
+                members: selectedUsers
+            };
+            
+            console.log('创建企微群:', groupInfo);
+            alert('企微群创建成功！');
+            
+            // 重置表单
+            resetForm();
+        }
+
+        // 重置表单
+        function resetForm() {
+            // 清空选中的模板
+            selectedTemplates = [];
+            document.querySelectorAll('.template-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.querySelectorAll('.template-table tr').forEach(row => {
+                row.classList.remove('selected');
+            });
+            templateHeader.textContent = '请选择模板';
+            
+            // 清空选中的用户
+            selectedUsers = [];
+            selectedUsersContainer.innerHTML = '';
+            notifyUsersInput.value = '';
+            
+            // 清空群名
+            groupNameInput.value = '';
+            updateCharCount();
+        }
+
+        // 初始化
+        function init() {
+            initTemplateList();
+            initEventListeners();
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
